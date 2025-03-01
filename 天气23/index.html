@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天气预报</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- 导航栏 -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4 rounded">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">天气预报</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#weather">天气</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#news">天气新闻</a>
+                        </li>
+                    </ul>
+                    <!-- 未登录状态 -->
+                    <div id="auth-buttons" class="d-flex">
+                        <button class="btn btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#loginModal">登录</button>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#registerModal">注册</button>
+                    </div>
+                    <!-- 已登录状态 -->
+                    <div id="user-profile" class="d-none">
+                        <div class="dropdown">
+                            <button class="btn dropdown-toggle d-flex align-items-center" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                                <img id="user-avatar" src="default-avatar.png" class="rounded-circle me-2" width="32" height="32" alt="用户头像">
+                                <span id="username">用户名</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#profileModal">个人资料</a></li>
+                                <li><a class="dropdown-item" href="#" id="logout-btn">退出登录</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <header>
+            <h1>实时天气预报</h1>
+            <div class="search-container">
+                <input type="text" id="city-search" placeholder="输入城市名称..." autocomplete="off">
+                <button id="search-btn"><i class="fas fa-search"></i></button>
+            </div>
+        </header>
+
+        <div id="loading" class="d-none">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">加载中...</span>
+            </div>
+        </div>
+
+        <div id="error-message" class="alert alert-danger d-none" role="alert">
+            无法获取天气数据，请检查城市名称或稍后再试。
+        </div>
+
+        <!-- 天气内容部分 -->
+        <div id="weather" class="content-section">
+            <main class="d-none" id="weather-container">
+                <section class="current-weather">
+                    <div class="current-weather-info">
+                        <h2 id="location">正在获取位置...</h2>
+                        <p id="current-date">--</p>
+                        <div class="current-temp-container">
+                            <img id="current-icon" src="" alt="天气图标">
+                            <div class="temp-details">
+                                <h3 id="current-temp">--°C</h3>
+                                <p id="current-description">--</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="current-details">
+                        <div class="detail-item">
+                            <i class="fas fa-wind"></i>
+                            <span>风速</span>
+                            <p id="wind-speed">-- km/h</p>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-tint"></i>
+                            <span>湿度</span>
+                            <p id="humidity">--%</p>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-eye"></i>
+                            <span>能见度</span>
+                            <p id="visibility">-- km</p>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-temperature-low"></i>
+                            <span>体感温度</span>
+                            <p id="feels-like">--°C</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="forecast">
+                    <h2>未来7天预报</h2>
+                    <div class="forecast-container" id="forecast-container">
+                        <!-- 预报内容将通过JavaScript动态生成 -->
+                    </div>
+                </section>
+
+                <section class="charts">
+                    <h2>温度趋势</h2>
+                    <div class="chart-container">
+                        <canvas id="temp-chart"></canvas>
+                    </div>
+                </section>
+
+                <section class="air-quality">
+                    <h2>空气质量</h2>
+                    <div class="air-quality-container">
+                        <div class="aqi-value">
+                            <h3 id="aqi-value">--</h3>
+                            <p id="aqi-description">--</p>
+                        </div>
+                        <div class="aqi-details">
+                            <div class="aqi-item">
+                                <span>PM2.5</span>
+                                <p id="pm25">-- μg/m³</p>
+                            </div>
+                            <div class="aqi-item">
+                                <span>PM10</span>
+                                <p id="pm10">-- μg/m³</p>
+                            </div>
+                            <div class="aqi-item">
+                                <span>NO₂</span>
+                                <p id="no2">-- μg/m³</p>
+                            </div>
+                            <div class="aqi-item">
+                                <span>SO₂</span>
+                                <p id="so2">-- μg/m³</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <!-- 天气新闻部分 -->
+        <div id="news" class="content-section d-none">
+            <h2>天气新闻</h2>
+            <div class="news-filter mb-3">
+                <select id="news-category" class="form-select">
+                    <option value="all">所有新闻</option>
+                    <option value="alerts">预警信息</option>
+                    <option value="events">天气事件</option>
+                </select>
+            </div>
+            <div id="news-container" class="row">
+                <!-- 新闻内容将通过JavaScript动态生成 -->
+                <div class="col-12 text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">加载中...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>数据来源: 和风天气 API</p>
+            <p>&copy; 2023 天气预报应用</p>
+        </footer>
+    </div>
+
+    <!-- 登录模态框 -->
+    <div class="modal fade" id="loginModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">用户登录</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="login-form">
+                        <div class="mb-3">
+                            <label for="login-email" class="form-label">电子邮箱</label>
+                            <input type="email" class="form-control" id="login-email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="login-password" class="form-label">密码</label>
+                            <input type="password" class="form-control" id="login-password" required>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">登录</button>
+                        </div>
+                        <div class="mt-3 text-center">
+                            <a href="#" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal" data-bs-dismiss="modal">忘记密码？</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 注册模态框 -->
+    <div class="modal fade" id="registerModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">用户注册</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="register-form">
+                        <div class="mb-3">
+                            <label for="register-username" class="form-label">用户名</label>
+                            <input type="text" class="form-control" id="register-username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="register-email" class="form-label">电子邮箱</label>
+                            <input type="email" class="form-control" id="register-email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="register-password" class="form-label">密码</label>
+                            <input type="password" class="form-control" id="register-password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="register-confirm-password" class="form-label">确认密码</label>
+                            <input type="password" class="form-control" id="register-confirm-password" required>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">注册</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 验证码模态框 -->
+    <div class="modal fade" id="verificationModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">邮箱验证</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>我们已向您的邮箱发送了验证码，请查收并输入：</p>
+                    <form id="verification-form">
+                        <div class="mb-3">
+                            <label for="verification-code" class="form-label">验证码</label>
+                            <input type="text" class="form-control" id="verification-code" required>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">验证</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 忘记密码模态框 -->
+    <div class="modal fade" id="forgotPasswordModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">重置密码</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="forgot-password-form">
+                        <div class="mb-3">
+                            <label for="forgot-email" class="form-label">电子邮箱</label>
+                            <input type="email" class="form-control" id="forgot-email" required>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">发送重置链接</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 个人资料模态框 -->
+    <div class="modal fade" id="profileModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">个人资料</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="profile-form">
+                        <div class="mb-3 text-center">
+                            <img id="profile-avatar" src="default-avatar.png" class="rounded-circle mb-3" width="100" height="100" alt="用户头像">
+                            <div>
+                                <label for="avatar-upload" class="btn btn-sm btn-outline-primary">更换头像</label>
+                                <input type="file" id="avatar-upload" class="d-none" accept="image/*">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="profile-username" class="form-label">用户名</label>
+                            <input type="text" class="form-control" id="profile-username">
+                        </div>
+                        <div class="mb-3">
+                            <label for="profile-email" class="form-label">电子邮箱</label>
+                            <input type="email" class="form-control" id="profile-email" readonly>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">保存更改</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 管理员设置模态框 (仅管理员可见) -->
+    <div class="modal fade" id="adminSettingsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">管理员设置</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="nav nav-tabs" id="adminTabs">
+                        <li class="nav-item">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#emailSettings">邮件设置</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#apiSettings">API设置</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#userManagement">用户管理</a>
+                        </li>
+                    </ul>
+                    <div class="tab-content mt-3">
+                        <div class="tab-pane fade show active" id="emailSettings">
+                            <form id="email-settings-form">
+                                <div class="mb-3">
+                                    <label for="email-service" class="form-label">邮件服务</label>
+                                    <select class="form-select" id="email-service">
+                                        <option value="smtp">SMTP</option>
+                                        <option value="sendgrid">SendGrid</option>
+                                        <option value="mailgun">Mailgun</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="email-host" class="form-label">SMTP主机</label>
+                                    <input type="text" class="form-control" id="email-host">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="email-port" class="form-label">SMTP端口</label>
+                                    <input type="number" class="form-control" id="email-port">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="email-user" class="form-label">邮箱账号</label>
+                                    <input type="email" class="form-control" id="email-user">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="email-pass" class="form-label">邮箱密码/API密钥</label>
+                                    <input type="password" class="form-control" id="email-pass">
+                                </div>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary">保存邮件设置</button>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="tab-pane fade" id="apiSettings">
+                            <form id="api-settings-form">
+                                <div class="mb-3">
+                                    <label for="weather-api-key" class="form-label">和风天气API密钥</label>
+                                    <input type="text" class="form-control" id="weather-api-key">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="news-api-key" class="form-label">新闻API密钥</label>
+                                    <input type="text" class="form-control" id="news-api-key">
+                                </div>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary">保存API设置</button>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="tab-pane fade" id="userManagement">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>用户名</th>
+                                            <th>邮箱</th>
+                                            <th>注册时间</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="users-table-body">
+                                        <!-- 用户列表将通过JavaScript动态生成 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="script.js"></script>
+    <script src="auth.js"></script>
+    <script src="news.js"></script>
+</body>
+</html> 
