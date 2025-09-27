@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32S3 物联网温湿度监控</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#36CFC9',
+                        success: '#52C41A',
+                        warning: '#FAAD14',
+                        danger: '#FF4D4F',
+                        dark: '#1D2129',
+                        light: '#F2F3F5'
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .card-shadow {
+                box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.07);
+            }
+            .gradient-bg {
+                background: linear-gradient(135deg, #165DFF 0%, #36CFC9 100%);
+            }
+            .animate-pulse-slow {
+                animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            }
+            .data-update-animation {
+                animation: dataUpdate 0.5s ease-out;
+            }
+        }
+        
+        @keyframes dataUpdate {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="font-inter bg-light text-dark min-h-screen">
+    <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-sm shadow-md transition-all duration-300" id="navbar">
+        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <div class="gradient-bg text-white p-2 rounded-lg">
+                    <i class="fa fa-microchip text-xl"></i>
+                </div>
+                <h1 class="text-xl font-bold text-primary hidden sm:block">ESP32S3 物联网监控系统</h1>
+                <h1 class="text-xl font-bold text-primary sm:hidden">物联网监控</h1>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <div class="hidden md:flex items-center space-x-2 text-sm text-gray-500">
+                    <i class="fa fa-refresh" id="refresh-icon"></i>
+                    <span id="last-update">最后更新: 加载中...</span>
+                </div>
+                
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                        <i class="fa fa-user"></i>
+                    </div>
+                    <span class="hidden sm:inline text-sm font-medium">管理员</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-6">
+        <section class="mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                <div>
+                    <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold">设备仪表盘</h2>
+                    <p class="text-gray-500">实时监测来自 ThingSpeak 云平台的数据</p>
+                </div>
+                
+                <div class="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 text-gray-500 rounded-full text-sm mt-4 md:mt-0" id="device-status">
+                    <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
+                    <span>连接中...</span>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-white rounded-xl p-6 card-shadow transform transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-gray-500 text-sm">当前温度</p>
+                            <h3 class="text-3xl font-bold mt-1" id="temperature-value">--.-°C</h3>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-danger/10 flex items-center justify-center text-danger">
+                            <i class="fa fa-thermometer-half text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 h-1 w-full bg-gray-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-danger rounded-full transition-all duration-500" id="temperature-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl p-6 card-shadow transform transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-gray-500 text-sm">当前湿度</p>
+                            <h3 class="text-3xl font-bold mt-1" id="humidity-value">--%</h3>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                            <i class="fa fa-tint text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 h-1 w-full bg-gray-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-primary rounded-full transition-all duration-500" id="humidity-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl p-6 card-shadow transform transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-gray-500 text-sm">水位高度</p>
+                            <h3 class="text-3xl font-bold mt-1" id="water-level-value">--mm</h3>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center text-secondary">
+                            <i class="fa fa-level-up text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 h-1 w-full bg-gray-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-secondary rounded-full transition-all duration-500" id="water-level-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl p-6 card-shadow transform transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-gray-500 text-sm">舒适度</p>
+                            <h3 class="text-3xl font-bold mt-1" id="comfort-level">--</h3>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-500" id="comfort-icon">
+                            <i class="fa fa-question text-xl"></i>
+                        </div>
+                    </div>
+                     <p class="text-sm text-gray-500 h-10" id="comfort-desc">等待数据...</p>
+                </div>
+            </div>
+        </section>
+        
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 bg-white rounded-xl p-6 card-shadow">
+                <h3 class="font-bold text-lg mb-4">数据趋势</h3>
+                <div class="h-80">
+                    <canvas id="main-chart"></canvas>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl p-6 card-shadow">
+                <h3 class="font-bold text-lg mb-4">异常记录</h3>
+                <div class="overflow-y-auto h-80 space-y-3" id="history-records">
+                    <div class="text-center text-gray-500 pt-10">
+                        <i class="fa fa-history text-2xl mb-2"></i>
+                        <p>等待数据加载...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <footer class="text-center py-6 text-sm text-gray-500">
+        © 2025 ESP32S3 物联网监控系统.
+    </footer>
+    
+    <script src="script.js"></script>
+</body>
+</html>
