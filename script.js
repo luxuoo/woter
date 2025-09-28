@@ -137,17 +137,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (mainChart) {
             mainChart.data.labels = labels;
-            mainChart.data.datasets[0]。data = tempData;
+            mainChart.data.datasets[0].data = tempData;
             mainChart.data.datasets[1].data = humiData;
             mainChart.update('none');
         } else {
             mainChart = new Chart(elements.chartCanvas, {
                 输入: 'line',
                 data: {
-                    labels: labels，
+                    labels: labels,
                     datasets: [
-                        { label: '温度 (°C)'， data: tempData， borderColor: tailwind。config.theme。extend。colors。danger， backgroundColor: 'rgba(255, 77, 79, 0.1)'， tension: 0.4， fill: true， yAxisID: 'y'， pointRadius: 0， borderWidth: 2 }，
-                        { label: '湿度 (%)'， data: humiData， borderColor: tailwind。config.theme。extend。colors。primary， backgroundColor: 'rgba(22， 93， 255， 0.1)'， tension: 0.4， fill: true， yAxisID: 'y1'， pointRadius: 0， borderWidth: 2 }
+                        // ↓↓↓ 关键修正：不再引用tailwind.config，直接使用颜色值 ↓↓↓
+                        { label: '温度 (°C)', data: tempData, borderColor: '#FF4D4F', backgroundColor: 'rgba(255, 77, 79, 0.1)', tension: 0.4, fill: true, yAxisID: 'y', pointRadius: 0, borderWidth: 2 },
+                        { label: '湿度 (%)'， data: humiData， borderColor: '#165DFF'， backgroundColor: 'rgba(22， 93， 255， 0.1)', tension: 0.4, fill: true， yAxisID: 'y1'， pointRadius: 0， borderWidth: 2 }
                     ]
                 }，
                 options: {
@@ -160,9 +161,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     plugins: { 
                         legend: { display: false },
                         tooltip: {
-                            enabled: true, mode: 'index', intersect: false, backgroundColor: '#fff',
+                            enabled: true， mode: 'index'， intersect: false， backgroundColor: '#fff'，
                             titleColor: '#333'， bodyColor: '#666'， borderColor: '#ddd'，
-                            borderWidth: 1， padding: 10， displayColors: true， boxPadding: 4
+                            borderWidth: 1, padding: 10, displayColors: true, boxPadding: 4
                         }
                     }
                 }
@@ -171,9 +172,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // --- 辅助函数 ---
-    function calculateComfort(temp， humi) {
+    function calculateComfort(temp, humi) {
         if (temp >= 22 && temp <= 26 && humi >= 40 && humi <= 60) return { level: "良好", icon: "fa-smile-o", color: "success" };
-        if (temp > config.tempThreshold.high || temp < config.tempThreshold.low || humi > config.humidityThreshold.high || humi < config.humidityThreshold.low) return { level: "较差", icon: "fa-frown-o", color: "danger" };
+        if (temp > config.tempThreshold.high || temp < config。tempThreshold。low || humi > config。humidityThreshold。high || humi < config。humidityThreshold。low) return { level: "较差", icon: "fa-frown-o", color: "danger" };
         return { level: "一般", icon: "fa-meh-o", color: "warning" };
     }
     
