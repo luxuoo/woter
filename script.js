@@ -137,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (mainChart) {
             mainChart.data.labels = labels;
-            mainChart.data.datasets[0].data = tempData;
+            mainChart.data.datasets[0]。data = tempData;
             mainChart.data.datasets[1].data = humiData;
             mainChart.update('none');
         } else {
@@ -146,13 +146,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 data: {
                     labels: labels,
                     datasets: [
-                        { label: '温度 (°C)', data: tempData, borderColor: '#FF4D4F', backgroundColor: 'rgba(255, 77, 79, 0.1)', tension: 0.4, fill: true, yAxisID: 'y', pointRadius: 0, borderWidth: 2 },
-                        // ↓↓↓ 关键修正：在这里添加了之前缺失的逗号 ↓↓↓
-                        { label: '湿度 (%)'， data: humiData， borderColor: '#165DFF'， backgroundColor: 'rgba(22， 93， 255， 0.1)', tension: 0.4, fill: true， yAxisID: 'y1'， pointRadius: 0， borderWidth: 2 }
+                        { label: '温度 (°C)'， data: tempData， borderColor: '#FF4D4F'， backgroundColor: 'rgba(255, 77, 79, 0.1)'， tension: 0.4， fill: true， yAxisID: 'y'， pointRadius: 0， borderWidth: 2 }，
+                        // ***************************************************************
+                        // *** 这个逗号是之前所有语法错误的根源，请确保它在这里！ ***
+                        // ***************************************************************
+                        { label: '湿度 (%)'， data: humiData, borderColor: '#165DFF', backgroundColor: 'rgba(22， 93, 255， 0.1)'， tension: 0.4, fill: true, yAxisID: 'y1', pointRadius: 0, borderWidth: 2 }
                     ]
                 }，
                 options: {
-                    responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+                    responsive: true， maintainAspectRatio: false， interaction: { mode: 'index'， intersect: false }，
                     scales: {
                         x: { grid: { display: false }, ticks: { maxTicksLimit: 10 } },
                         y: { 输入: 'linear', position: 'left'， title: { display: true， text: '温度 (°C)' }， grid: { color: 'rgba(0, 0, 0, 0.05)' } }，
@@ -161,9 +163,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     plugins: { 
                         legend: { display: false },
                         tooltip: {
-                            enabled: true， mode: 'index'， intersect: false， backgroundColor: '#fff'，
-                            titleColor: '#333'， bodyColor: '#666'， borderColor: '#ddd'，
-                            borderWidth: 1, padding: 10, displayColors: true, boxPadding: 4
+                            enabled: true, mode: 'index', intersect: false, backgroundColor: '#fff',
+                            titleColor: '#333', bodyColor: '#666', borderColor: '#ddd',
+                            borderWidth: 1， padding: 10, displayColors: true, boxPadding: 4
                         }
                     }
                 }
@@ -171,10 +173,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // --- 辅助函数 ---
     function calculateComfort(temp, humi) {
         if (temp >= 22 && temp <= 26 && humi >= 40 && humi <= 60) return { level: "良好", icon: "fa-smile-o", color: "success" };
-        if (temp > config.tempThreshold.high || temp < config。tempThreshold。low || humi > config。humidityThreshold。high || humi < config。humidityThreshold。low) return { level: "较差", icon: "fa-frown-o", color: "danger" };
+        if (temp > config.tempThreshold.high || temp < config.tempThreshold.low || humi > config.humidityThreshold.high || humi < config.humidityThreshold.low) return { level: "较差", icon: "fa-frown-o", color: "danger" };
         return { level: "一般", icon: "fa-meh-o", color: "warning" };
     }
     
@@ -183,7 +184,6 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => elements.refreshIcon.classList.remove('animate-spin'), 1000);
     }
     
-    // --- 事件监听与初始化 ---
     elements.chartToggles.addEventListener('click', (e) => {
         const btn = e.target.closest('button');
         if (!btn || !mainChart) return;
