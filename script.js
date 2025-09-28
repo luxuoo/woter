@@ -1,12 +1,12 @@
 // 当网页的HTML内容完全加载后执行
-document.addEventListener('DOMContentLoaded', () => {
+document。addEventListener('DOMContentLoaded', () => {
 
     // --- 配置区域 ---
     const config = {
         channelId: "3092550", // <-- 已修正为正确的Channel ID
         readApiKey: "1JCH60ZZR69R58JN",
         historyResults: 100, // 获取最近100条历史数据用于计算和图表
-        refreshInterval: 30000, // 每30秒刷新一次
+        refreshInterval: 20000, // 每20秒刷新一次
         // 异常阈值
         tempThreshold: { high: 28, low: 18 },
         humidityThreshold: { high: 70, low: 40 },
