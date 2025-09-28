@@ -23,7 +23,6 @@
             </div>
         </div>
     </header>
-
     <main class="container mx-auto px-4 py-8">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="lg:col-span-2 space-y-8">
@@ -35,7 +34,6 @@
                         <div class="bg-white rounded-xl p-6 card-shadow animate-pulse"><div class="h-6 bg-gray-200 rounded w-3/4 mb-4"></div><div class="h-10 bg-gray-200 rounded w-1/2"></div></div>
                     </div>
                 </section>
-
                 <section class="bg-white rounded-xl p-6 card-shadow">
                     <div class="flex flex-wrap justify-between items-center mb-4">
                         <h3 class="font-bold text-lg text-gray-800">数据趋势</h3>
@@ -50,34 +48,20 @@
                     </div>
                 </section>
             </div>
-
             <div class="lg:col-span-1 space-y-8">
                 <section class="bg-white rounded-xl p-6 card-shadow">
                     <h3 class="font-bold text-lg text-gray-800 mb-4">设备信息</h3>
                     <div id="device-info-container">
                         <div class="space-y-3 animate-pulse">
-                            <div class="h-4 bg-gray-200 rounded w-full"></div>
-                            <div class="h-4 bg-gray-200 rounded w-5/6"></div>
-                            <div class="h-4 bg-gray-200 rounded w-full"></div>
+                            <div class="h-4 bg-gray-200 rounded w-full"></div><div class="h-4 bg-gray-200 rounded w-5/6"></div><div class="h-4 bg-gray-200 rounded w-full"></div>
                         </div>
                     </div>
                 </section>
-
                 <section class="bg-white rounded-xl p-6 card-shadow">
                     <h3 class="font-bold text-lg text-gray-800 mb-4">异常记录</h3>
                     <div class="overflow-y-auto max-h-96" id="history-records-container">
-                        <table class="w-full text-sm text-left">
-                            <thead class="text-xs text-gray-700 uppercase bg-light sticky top-0">
-                                <tr>
-                                    <th scope="col" class="px-4 py-3">类型</th>
-                                    <th scope="col" class="px-4 py-3">详情</th>
-                                    <th scope="col" class="px-4 py-3">时间</th>
-                                </tr>
-                            </thead>
-                            <tbody id="history-records-body">
-                                <tr><td colspan="3" class="p-4"><div class="h-5 bg-gray-200 rounded animate-pulse"></div></td></tr>
-                                <tr><td colspan="3" class="p-4"><div class="h-5 bg-gray-200 rounded animate-pulse"></div></td></tr>
-                                <tr><td colspan="3" class="p-4"><div class="h-5 bg-gray-200 rounded animate-pulse"></div></td></tr>
+                        <table class="w-full text-sm text-left"><thead class="text-xs text-gray-700 uppercase bg-light sticky top-0"><tr><th scope="col" class="px-4 py-3">类型</th><th scope="col" class="px-4 py-3">详情</th><th scope="col" class="px-4 py-3">时间</th></tr></thead>
+                            <tbody id="history-records-body"><tr><td colspan="3" class="p-4"><div class="h-5 bg-gray-200 rounded animate-pulse"></div></td></tr><tr><td colspan="3" class="p-4"><div class="h-5 bg-gray-200 rounded animate-pulse"></div></td></tr><tr><td colspan="3" class="p-4"><div class="h-5 bg-gray-200 rounded animate-pulse"></div></td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -85,7 +69,6 @@
             </div>
         </div>
     </main>
-    
-    <script src="script.js"></script>
+    <script src="script.js" defer></script>
 </body>
 </html>
