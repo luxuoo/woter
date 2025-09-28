@@ -146,8 +146,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 data: {
                     labels: labels,
                     datasets: [
-                        // ↓↓↓ 关键修正：不再引用tailwind.config，直接使用颜色值 ↓↓↓
                         { label: '温度 (°C)', data: tempData, borderColor: '#FF4D4F', backgroundColor: 'rgba(255, 77, 79, 0.1)', tension: 0.4, fill: true, yAxisID: 'y', pointRadius: 0, borderWidth: 2 },
+                        // ↓↓↓ 关键修正：在这里添加了之前缺失的逗号 ↓↓↓
                         { label: '湿度 (%)'， data: humiData， borderColor: '#165DFF'， backgroundColor: 'rgba(22， 93， 255， 0.1)', tension: 0.4, fill: true， yAxisID: 'y1'， pointRadius: 0， borderWidth: 2 }
                     ]
                 }，
