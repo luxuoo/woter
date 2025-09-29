@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>物联网数据监控仪表盘 (升级版)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#165DFF',
+            secondary: '#36CFC9',
+            warning: '#FF7D00',
+            danger: '#F53F3F',
+            success: '#00B42A',
+            dark: '#1D2129',
+            light: '#F2F3F5'
+          },
+          fontFamily: {
+            inter: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+  
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .card-shadow {
+        box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1);
+      }
+      .hover-lift {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+      .hover-lift:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.15);
+      }
+      .gradient-bg {
+        background: linear-gradient(135deg, #165DFF 0%, #36CFC9 100%);
+      }
+    }
+  </style>
+</head>
+<body class="font-inter bg-gray-50 text-dark min-h-screen">
+  <header class="gradient-bg text-white shadow-md sticky top-0 z-50 transition-all duration-300">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+      <div class="flex items-center space-x-3">
+        <i class="fa fa-line-chart text-2xl"></i>
+        <h1 class="text-[clamp(1.25rem,3vw,1.75rem)] font-bold">物联网数据监控仪表盘</h1>
+      </div>
+      
+      <div class="flex items-center space-x-6">
+        <div class="hidden md:flex items-center space-x-2">
+          <i class="fa fa-refresh" id="refresh-icon"></i>
+          <span id="last-updated">未加载数据</span>
+        </div>
+        
+        <button id="refresh-btn" class="bg-white text-primary hover:bg-opacity-90 px-4 py-2 rounded-lg font-medium transition-all duration-300 flex items-center space-x-2">
+          <i class="fa fa-refresh"></i>
+          <span>刷新</span>
+        </button>
+      </div>
+    </div>
+    
+    <div class="bg-white bg-opacity-10 px-4 py-2">
+      <div class="container mx-auto flex items-center space-x-2 text-sm">
+        <span>自动刷新间隔:</span>
+        <select id="refresh-interval" class="bg-white bg-opacity-20 border-none rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-white">
+          <option value="10">10秒</option>
+          <option value="30" selected>30秒</option>
+          <option value="60">1分钟</option>
+          <option value="300">5分钟</option>
+          <option value="0">关闭自动刷新</option>
+        </select>
+      </div>
+    </div>
+  </header>
+
+  <main class="container mx-auto px-4 py-6">
+    <section class="mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white rounded-xl p-6 card-shadow hover-lift">
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <p class="text-gray-500 text-sm font-medium">当前平均温度</p>
+              <h3 class="text-3xl font-bold mt-1" id="current-temp">-</h3>
+            </div>
+            <div class="w-12 h-12 rounded-full bg-warning bg-opacity-10 flex items-center justify-center text-warning">
+              <i class="fa fa-thermometer-half text-xl"></i>
+            </div>
+          </div>
+          <div class="flex items-center text-sm">
+            <span id="temp-trend" class="flex items-center">
+              <i class="fa fa-arrow-right mr-1"></i>
+              <span>加载中...</span>
+            </span>
+            <span class="ml-auto text-gray-400" id="temp-time">-</span>
+          </div>
+        </div>
+        
+        <div class="bg-white rounded-xl p-6 card-shadow hover-lift">
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <p class="text-gray-500 text-sm font-medium">当前湿度</p>
+              <h3 class="text-3xl font-bold mt-1" id="current-humidity">-</h3>
+            </div>
+            <div class="w-12 h-12 rounded-full bg-primary bg-opacity-10 flex items-center justify-center text-primary">
+              <i class="fa fa-tint text-xl"></i>
+            </div>
+          </div>
+          <div class="flex items-center text-sm">
+            <span id="humidity-trend" class="flex items-center">
+              <i class="fa fa-arrow-right mr-1"></i>
+              <span>加载中...</span>
+            </span>
+            <span class="ml-auto text-gray-400" id="humidity-time">-</span>
+          </div>
+        </div>
+        
+        <div class="bg-white rounded-xl p-6 card-shadow hover-lift">
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <p class="text-gray-500 text-sm font-medium">当前气压</p>
+              <h3 class="text-3xl font-bold mt-1" id="current-pressure">-</h3>
+            </div>
+            <div class="w-12 h-12 rounded-full bg-success bg-opacity-10 flex items-center justify-center text-success">
+              <i class="fa fa-tachometer text-xl"></i>
+            </div>
+          </div>
+          <div class="flex items-center text-sm">
+            <span id="pressure-trend" class="flex items-center">
+              <i class="fa fa-arrow-right mr-1"></i>
+              <span>加载中...</span>
+            </span>
+            <span class="ml-auto text-gray-400" id="pressure-time">-</span>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <section class="mb-8">
+      <div class="bg-white rounded-xl p-6 card-shadow">
+        <div class="flex flex-wrap justify-between items-center mb-6">
+          <h2 class="text-xl font-bold">数据趋势图表</h2>
+          <div class="flex space-x-2 mt-2 sm:mt-0">
+            <button class="data-range-btn px-3 py-1 rounded-md bg-primary text-white text-sm" data-range="20">最近20条</button>
+            <button class="data-range-btn px-3 py-1 rounded-md bg-gray-100 hover:bg-gray-200 text-sm" data-range="50">最近50条</button>
+            <button class="data-range-btn px-3 py-1 rounded-md bg-gray-100 hover:bg-gray-200 text-sm" data-range="100">最近100条</button>
+          </div>
+        </div>
+        
+        <div class="h-[400px]">
+          <canvas id="data-chart"></canvas>
+        </div>
+      </div>
+    </section>
+    
+    <section>
+      <div class="bg-white rounded-xl p-6 card-shadow">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-xl font-bold">历史数据记录</h2>
+          <div class="relative">
+            <input type="text" id="search-data" placeholder="搜索时间..." class="pl-8 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
+            <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+          </div>
+        </div>
+        
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead>
+              <tr>
+                <th class="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">时间</th>
+                <th class="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">温度1 (°C)</th>
+                <th class="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">湿度 (%)</th>
+                <th class="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">温度2 (°C)</th>
+                <th class="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">气压 (hPa)</th>
+              </tr>
+            </thead>
+            <tbody id="data-table-body" class="bg-white divide-y divide-gray-200">
+              <tr>
+                <td colspan="5" class="px-4 py-8 text-center text-gray-500">
+                  <div class="flex flex-col items-center">
+                    <i class="fa fa-circle-o-notch fa-spin text-2xl mb-2"></i>
+                    <span>加载数据中...</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="flex justify-between items-center mt-6">
+          <div class="text-sm text-gray-500">
+            显示 <span id="showing-range">0-0</span> 条，共 <span id="total-count">0</span> 条记录
+          </div>
+          <div class="flex space-x-2">
+            <button id="prev-page" class="px-3 py-1 border border-gray-300 rounded-md text-sm bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+              <i class="fa fa-chevron-left mr-1"></i> 上一页
+            </button>
+            <button id="next-page" class="px-3 py-1 border border-gray-300 rounded-md text-sm bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+              下一页 <i class="fa fa-chevron-right ml-1"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="bg-dark text-white py-8 mt-12">
+    <div class="container mx-auto px-4">
+      <div class="flex flex-col md:flex-row justify-between items-center">
+        <div class="mb-4 md:mb-0">
+          <p class="text-gray-400 text-sm">© 2023 物联网数据监控系统. 保留所有权利.</p>
+        </div>
+        <div class="flex space-x-4">
+          <a href="#" class="text-gray-400 hover:text-white transition-colors">
+            <i class="fa fa-github text-xl"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <div id="loading-indicator" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+    <div class="bg-white p-6 rounded-xl flex items-center space-x-3">
+      <i class="fa fa-circle-o-notch fa-spin text-2xl text-primary"></i>
+      <span>正在加载数据...</span>
+    </div>
+  </div>
+
+  <script>
+    // 全局变量
+    const API_URL = 'https://api.thingspeak.com/channels/3092550/feeds.json?api_key=1JCH60ZZR69R58JN';
+    let allData = [];
+    let currentChart = null;
+    let refreshInterval = 30; // 默认30秒刷新一次
+    let refreshTimer = null;
+    let currentRange = 20; // 默认显示最近20条数据
+    let currentPage = 1;
+    const itemsPerPage = 10;
+    
+    // DOM元素
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const refreshBtn = document.getElementById('refresh-btn');
+    const refreshIcon = document.getElementById('refresh-icon');
+    const lastUpdatedEl = document.getElementById('last-updated');
+    const refreshIntervalEl = document.getElementById('refresh-interval');
+    const dataRangeBtns = document.querySelectorAll('.data-range-btn');
+    const searchInput = document.getElementById('search-data');
+    const prevPageBtn = document.getElementById('prev-page');
+    const nextPageBtn = document.getElementById('next-page');
+    const showingRangeEl = document.getElementById('showing-range');
+    const totalCountEl = document.getElementById('total-count');
+    
+    // 初始化
+    document.addEventListener('DOMContentLoaded', () => {
+      // 加载数据
+      fetchData();
+      
+      // 设置事件监听
+      refreshBtn.addEventListener('click', fetchData);
+      refreshIntervalEl.addEventListener('change', setRefreshInterval);
+      
+      dataRangeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          dataRangeBtns.forEach(b => {
+            b.classList.remove('bg-primary', 'text-white');
+            b.classList.add('bg-gray-100', 'hover:bg-gray-200');
+          });
+          btn.classList.remove('bg-gray-100', 'hover:bg-gray-200');
+          btn.classList.add('bg-primary', 'text-white');
+          currentRange = parseInt(btn.dataset.range);
+          currentPage = 1;
+          updateDisplayedData();
+        });
+      });
+      
+      searchInput.addEventListener('input', () => {
+        currentPage = 1;
+        updateDisplayedData();
+      });
+      
+      prevPageBtn.addEventListener('click', () => {
+        if (currentPage > 1) {
+          currentPage--;
+          updateDisplayedData();
+        }
+      });
+      
+      nextPageBtn.addEventListener('click', () => {
+        const filteredData = getFilteredData();
+        const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+        if (currentPage < totalPages) {
+          currentPage++;
+          updateDisplayedData();
+        }
+      });
+      
+      // 初始化自动刷新
+      setRefreshInterval();
+    });
+    
+    // 获取数据
+    async function fetchData() {
+      try {
+        // 显示加载指示器
+        loadingIndicator.classList.remove('hidden');
+        refreshIcon.classList.add('fa-spin');
+        
+        // 发送请求
+        const response = await fetch(`${API_URL}&results=${currentRange * 2}`); // 获取更多数据用于计算趋势
+        if (!response.ok) {
+          throw new Error(`HTTP错误: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // 处理数据
+        if (data.feeds && Array.isArray(data.feeds)) {
+          // 过滤掉空数据并按时间排序
+          allData = data.feeds
+            .filter(item => item.field1 || item.field2 || item.field3 || item.field4)
+            .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+          
+          // 更新显示
+          updateDisplayedData();
+          
+          // 更新最后更新时间
+          const now = new Date();
+          lastUpdatedEl.textContent = `最后更新: ${formatDateTime(now)}`;
+        }
+      } catch (error) {
+        console.error('获取数据失败:', error);
+        alert('获取数据失败，请稍后重试');
+      } finally {
+        // 隐藏加载指示器
+        loadingIndicator.classList.add('hidden');
+        refreshIcon.classList.remove('fa-spin');
+      }
+    }
+    
+    // 更新显示的数据
+    function updateDisplayedData() {
+      if (allData.length === 0) {
+        document.getElementById('data-table-body').innerHTML = `
+          <tr>
+            <td colspan="5" class="px-4 py-8 text-center text-gray-500">没有数据可供显示</td>
+          </tr>
+        `;
+        return;
+      }
+      
+      // 更新当前数据卡片
+      updateCurrentDataCards();
+      
+      // 更新图表
+      updateChart();
+      
+      // 更新表格
+      updateDataTable();
+    }
+    
+    // 更新当前数据卡片
+    function updateCurrentDataCards() {
+      const latestData = allData[allData.length - 1];
+      const prevData = allData.length > 1 ? allData[allData.length - 2] : null;
+      
+      // 温度卡片 (计算平均值)
+      const temp1 = parseFloat(latestData.field1);
+      const temp2 = parseFloat(latestData.field3);
+      let avgTemp = null;
+      if (!isNaN(temp1) && !isNaN(temp2)) {
+          avgTemp = (temp1 + temp2) / 2;
+      } else if (!isNaN(temp1)) {
+          avgTemp = temp1;
+      } else if (!isNaN(temp2)) {
+          avgTemp = temp2;
+      }
+
+      if (avgTemp !== null) {
+        document.getElementById('current-temp').textContent = `${avgTemp.toFixed(1)} °C`;
+        document.getElementById('temp-time').textContent = formatDateTime(new Date(latestData.created_at));
+        
+        if (prevData) {
+            const prevTemp1 = parseFloat(prevData.field1);
+            const prevTemp2 = parseFloat(prevData.field3);
+            let prevAvgTemp = null;
+            if (!isNaN(prevTemp1) && !isNaN(prevTemp2)) {
+                prevAvgTemp = (prevTemp1 + prevTemp2) / 2;
+            } else if (!isNaN(prevTemp1)) {
+                prevAvgTemp = prevTemp1;
+            } else if (!isNaN(prevTemp2)) {
+                prevAvgTemp = prevTemp2;
+            }
+          if(prevAvgTemp !== null){
+              const diff = avgTemp - prevAvgTemp;
+              updateTrendIndicator('temp-trend', diff);
+          }
+        }
+      }
+      
+      // 湿度卡片
+      if (latestData.field2) {
+        document.getElementById('current-humidity').textContent = `${parseFloat(latestData.field2).toFixed(1)} %`;
+        document.getElementById('humidity-time').textContent = formatDateTime(new Date(latestData.created_at));
+        
+        if (prevData && prevData.field2) {
+          const diff = parseFloat(latestData.field2) - parseFloat(prevData.field2);
+          updateTrendIndicator('humidity-trend', diff);
+        }
+      }
+      
+      // 气压卡片
+      if (latestData.field4) {
+        document.getElementById('current-pressure').textContent = `${parseFloat(latestData.field4).toFixed(1)} hPa`;
+        document.getElementById('pressure-time').textContent = formatDateTime(new Date(latestData.created_at));
+        
+        if (prevData && prevData.field4) {
+          const diff = parseFloat(latestData.field4) - parseFloat(prevData.field4);
+          updateTrendIndicator('pressure-trend', diff);
+        }
+      }
+    }
+    
+    // 更新趋势指示器
+    function updateTrendIndicator(elementId, diff) {
+      const element = document.getElementById(elementId);
+      let icon, text, color;
+      
+      if (diff > 0.05) { // 增加一个小的阈值避免抖动
+        icon = 'fa-arrow-up';
+        text = `上升 ${Math.abs(diff).toFixed(1)}`;
+        color = 'text-danger';
+      } else if (diff < -0.05) {
+        icon = 'fa-arrow-down';
+        text = `下降 ${Math.abs(diff).toFixed(1)}`;
+        color = 'text-success';
+      } else {
+        icon = 'fa-arrow-right';
+        text = '稳定';
+        color = 'text-gray-500';
+      }
+      
+      element.innerHTML = `<i class="fa ${icon} mr-1 ${color}"></i><span class="${color}">${text}</span>`;
+    }
+    
+    // 更新图表
+    function updateChart() {
+      const ctx = document.getElementById('data-chart').getContext('2d');
+      
+      // 获取要显示的数据范围
+      const chartData = [...allData]
+        .slice(-currentRange)
+        .filter(item => item.created_at);
+      
+      // 准备图表数据
+      const labels = chartData.map(item => formatTime(new Date(item.created_at)));
+      
+      const temp1Data = chartData.map(item => item.field1 ? parseFloat(item.field1) : null);
+      const humidityData = chartData.map(item => item.field2 ? parseFloat(item.field2) : null);
+      const temp2Data = chartData.map(item => item.field3 ? parseFloat(item.field3) : null);
+      const pressureData = chartData.map(item => item.field4 ? parseFloat(item.field4) : null);
+      
+      // 如果已有图表，销毁它
+      if (currentChart) {
+        currentChart.destroy();
+      }
+      
+      // 创建新图表
+      currentChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: '温度1 (°C)',
+              data: temp1Data,
+              borderColor: '#FF7D00', // 橙色
+              backgroundColor: 'rgba(255, 125, 0, 0.1)',
+              tension: 0.3,
+              yAxisID: 'y_temp'
+            },
+            {
+              label: '温度2 (°C)',
+              data: temp2Data,
+              borderColor: '#F53F3F', // 红色
+              backgroundColor: 'rgba(245, 63, 63, 0.1)',
+              tension: 0.3,
+              yAxisID: 'y_temp'
+            },
+            {
+              label: '湿度 (%)',
+              data: humidityData,
+              borderColor: '#165DFF', // 蓝色
+              backgroundColor: 'rgba(22, 93, 255, 0.1)',
+              tension: 0.3,
+              yAxisID: 'y_humidity'
+            },
+            {
+              label: '气压 (hPa)',
+              data: pressureData,
+              borderColor: '#00B42A', // 绿色
+              backgroundColor: 'rgba(0, 180, 42, 0.1)',
+              tension: 0.3,
+              yAxisID: 'y_pressure'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false,
+          },
+          stacked: false,
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 10 }
+            },
+            y_temp: {
+              type: 'linear',
+              display: true,
+              position: 'left',
+              title: { display: true, text: '温度 (°C)', color: '#FF7D00' },
+              grid: { drawOnChartArea: true }
+            },
+            y_humidity: {
+              type: 'linear',
+              display: true,
+              position: 'right',
+              title: { display: true, text: '湿度 (%)', color: '#165DFF' },
+              grid: { drawOnChartArea: false },
+              min: 0,
+              max: 100
+            },
+            y_pressure: {
+              type: 'linear',
+              display: true,
+              position: 'right',
+              title: { display: true, text: '气压 (hPa)', color: '#00B42A'},
+              grid: { drawOnChartArea: false },
+            }
+          },
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: { boxWidth: 12, usePointStyle: true, pointStyle: 'circle' }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(29, 33, 41, 0.9)',
+              padding: 10, cornerRadius: 6
+            }
+          }
+        }
+      });
+    }
+    
+    // 获取过滤后的数据
+    function getFilteredData() {
+      const searchTerm = searchInput.value.toLowerCase().trim();
+      let filteredData = [...allData].reverse(); // 显示最新数据在前
+      
+      // 按搜索词过滤
+      if (searchTerm) {
+        filteredData = filteredData.filter(item => {
+          const date = new Date(item.created_at);
+          return formatDateTime(date).toLowerCase().includes(searchTerm) ||
+                 formatDate(date).toLowerCase().includes(searchTerm) ||
+                 formatTime(date).toLowerCase().includes(searchTerm);
+        });
+      }
+      
+      return filteredData;
+    }
+    
+    // 更新数据表格
+    function updateDataTable() {
+      const tableBody = document.getElementById('data-table-body');
+      const filteredData = getFilteredData();
+      
+      // 计算分页
+      const totalItems = filteredData.length;
+      const totalPages = Math.ceil(totalItems / itemsPerPage);
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+      const paginatedData = filteredData.slice(startIndex, endIndex);
+      
+      // 更新分页信息
+      showingRangeEl.textContent = totalItems > 0 ? `${startIndex + 1}-${endIndex}` : '0-0';
+      totalCountEl.textContent = totalItems;
+      
+      // 更新分页按钮状态
+      prevPageBtn.disabled = currentPage <= 1;
+      nextPageBtn.disabled = currentPage >= totalPages;
+      
+      // 清空表格
+      tableBody.innerHTML = '';
+      
+      // 如果没有数据
+      if (paginatedData.length === 0) {
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="5" class="px-4 py-8 text-center text-gray-500">没有匹配的数据</td>
+          </tr>
+        `;
+        return;
+      }
+      
+      // 添加数据行
+      paginatedData.forEach((item, index) => {
+        const row = document.createElement('tr');
+        row.className = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+        row.classList.add('hover:bg-gray-100', 'transition-colors');
+        
+        const date = new Date(item.created_at);
+        
+        row.innerHTML = `
+          <td class="px-4 py-4 whitespace-nowrap">
+            <div class="text-sm font-medium text-gray-900">${formatDateTime(date)}</div>
+          </td>
+          <td class="px-4 py-4 whitespace-nowrap">
+            <div class="text-sm ${item.field1 ? 'text-gray-800' : 'text-gray-400'}">${item.field1 ? parseFloat(item.field1).toFixed(1) : '-'}</div>
+          </td>
+          <td class="px-4 py-4 whitespace-nowrap">
+            <div class="text-sm ${item.field2 ? 'text-gray-800' : 'text-gray-400'}">${item.field2 ? parseFloat(item.field2).toFixed(1) : '-'}</div>
+          </td>
+          <td class="px-4 py-4 whitespace-nowrap">
+            <div class="text-sm ${item.field3 ? 'text-gray-800' : 'text-gray-400'}">${item.field3 ? parseFloat(item.field3).toFixed(1) : '-'}</div>
+          </td>
+          <td class="px-4 py-4 whitespace-nowrap">
+            <div class="text-sm ${item.field4 ? 'text-gray-800' : 'text-gray-400'}">${item.field4 ? parseFloat(item.field4).toFixed(1) : '-'}</div>
+          </td>
+        `;
+        
+        tableBody.appendChild(row);
+      });
+    }
+    
+    // 设置自动刷新间隔
+    function setRefreshInterval() {
+      if (refreshTimer) { clearInterval(refreshTimer); }
+      refreshInterval = parseInt(refreshIntervalEl.value);
+      if (refreshInterval > 0) {
+        refreshTimer = setInterval(fetchData, refreshInterval * 1000);
+      }
+    }
+    
+    // 格式化日期时间 (YYYY-MM-DD HH:MM:SS)
+    function formatDateTime(date) { return `${formatDate(date)} ${formatTime(date)}`; }
+    
+    // 格式化日期 (YYYY-MM-DD)
+    function formatDate(date) { return `${date.getFullYear()}-${padZero(date.getMonth() + 1)}-${padZero(date.getDate())}`; }
+    
+    // 格式化时间 (HH:MM:SS)
+    function formatTime(date) { return `${padZero(date.getHours())}:${padZero(date.getMinutes())}:${padZero(date.getSeconds())}`; }
+    
+    // 补零函数
+    function padZero(num) { return num < 10 ? `0${num}` : num; }
+  </script>
+</body>
+</html>
