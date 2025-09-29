@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>环境监测仪表盘</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>环境监测仪表盘</h1>
+            <div class="date-time" id="date-time">加载中...</div>
+        </header>
+
+        <div class="dashboard">
+            <!-- 加载状态指示器 -->
+            <div id="loading-indicator" class="hidden">
+                <div class="spinner"></div>
+                <p>正在加载数据...</p>
+            </div>
+
+            <!-- 错误提示 -->
+            <div id="error-message" class="hidden">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>数据加载失败，请检查网络连接后重试</p>
+            </div>
+
+            <!-- 实时数据卡片 -->
+            <div class="data-cards">
+                <div class="card temperature">
+                    <div class="card-icon">
+                        <i class="fas fa-temperature-high"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>温度 <span id="temp-alert" class="alert-indicator"></span></h3>
+                        <div class="card-value">
+                            <span id="temperature-value">--</span>
+                            <span class="unit">°C</span>
+                        </div>
+                        <div class="change-value">
+                            <span id="temp-change">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card humidity">
+                    <div class="card-icon">
+                        <i class="fas fa-tint"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>湿度 <span id="humidity-alert" class="alert-indicator"></span></h3>
+                        <div class="card-value">
+                            <span id="humidity-value">--</span>
+                            <span class="unit">%RH</span>
+                        </div>
+                        <div class="change-value">
+                            <span id="humidity-change">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card water-level">
+                    <div class="card-icon">
+                        <i class="fas fa-water"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>水位 <span id="water-alert" class="alert-indicator"></span></h3>
+                        <div class="card-value">
+                            <span id="water-level-value">--</span>
+                            <span class="unit">cm</span>
+                        </div>
+                        <div class="change-value">
+                            <span id="water-change">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 数据统计区域 -->
+            <div class="stats-container">
+                <h3>数据统计</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-title">温度均值</div>
+                        <div class="stat-value" id="temp-avg">--</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-title">湿度均值</div>
+                        <div class="stat-value" id="humidity-avg">--</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-title">水位均值</div>
+                        <div class="stat-value" id="water-avg">--</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 图表控制区域 -->
+            <div class="chart-controls">
+                <div class="control-group">
+                    <button id="refresh-btn" class="btn">
+                        <i class="fas fa-sync-alt"></i> 刷新数据
+                    </button>
+                    <div id="mini-loading" class="mini-loading hidden">
+                        <div class="mini-spinner"></div>
+                    </div>
+                    <button id="export-btn" class="btn export-btn">
+                        <i class="fas fa-download"></i> 导出数据
+                    </button>
+                </div>
+                <div class="control-group">
+                    <label for="time-range">时间范围:</label>
+                    <select id="time-range" class="select">
+                        <option value="1h">1小时</option>
+                        <option value="6h" selected>6小时</option>
+                        <option value="24h">24小时</option>
+                        <option value="7d">7天</option>
+                        <option value="30d">30天</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="show-temperature" checked>
+                        <label for="show-temperature">温度</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="show-humidity" checked>
+                        <label for="show-humidity">湿度</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="show-water-level" checked>
+                        <label for="show-water-level">水位</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 图表区域 -->
+            <div class="chart-container">
+                <canvas id="environment-chart"></canvas>
+            </div>
+        </div>
+
+        <footer>
+            <p>© 2023 环境监测系统 | 版本 1.0</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
